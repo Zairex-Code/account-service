@@ -1,0 +1,48 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: account-service
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/account_db
+      auto-index-creation: true
+
+# Actuator Observability & Health Check Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Springdoc OpenAPI Documentation Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+# Resilience4j Circuit Breaker & TimeLimiter (BCP Standard: 2.0s Strict Timeout)
+resilience4j:
+  timelimiter:
+    instances:
+      customerServiceTimeout:
+        timeout-duration: 2s
+  circuitbreaker:
+    instances:
+      customerServiceCB:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+
+# Reactive SLF4J / Logback Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.nttdata.bootcamp.accountservice: DEBUG
+    org.springframework.data.mongodb: INFO
