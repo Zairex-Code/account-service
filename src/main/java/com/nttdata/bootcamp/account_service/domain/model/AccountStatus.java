@@ -11,8 +11,23 @@ package com.nttdata.bootcamp.account_service.domain.model;
  * </p>
  */
 public enum AccountStatus {
+    /**
+     * Account is fully active and authorized for financial transactions.
+     */
     ACTIVE,
+
+    /**
+     * Account is restricted from outgoing transfers or withdrawals.
+     */
     BLOCKED,
+
+    /**
+     * Account is dormant due to inactivity.
+     */
     INACTIVE,
+
+    /**
+     * Account is permanently closed and unarchived.
+     */
     CLOSED
 }
