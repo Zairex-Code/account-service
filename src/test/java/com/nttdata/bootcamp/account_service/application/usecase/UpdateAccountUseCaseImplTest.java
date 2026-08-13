@@ -22,7 +22,7 @@ import reactor.test.StepVerifier;
 /**
  * Unit test suite for {@link UpdateAccountUseCaseImpl}.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Tests reactive account update operations and domain merging rules.
  * - Validates fail-fast exceptions on invalid inputs (null ID, null payload, missing record).
  * - Employs StepVerifier to assert Mono emissions asynchronously without blocking Netty threads.
