@@ -23,15 +23,13 @@ import reactor.test.StepVerifier;
 /**
  * Unit test suite for {@link CreateAccountUseCaseImpl}.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Employs StepVerifier to test reactive stream execution and assertions without blocking.
  * - Mocks external ports (AccountPersistencePort, CustomerClientPort) using Mockito.
  * - Verifies fail-fast business rules (null payload, negative balance, non-existent customer).
  * - Ensures 100% line and branch coverage for account creation logic.
  * </p>
 
- * @author NTT DATA Bootcamp Team
- * @version 1.0
  */
 @ExtendWith(MockitoExtension.class)
 class CreateAccountUseCaseImplTest {
