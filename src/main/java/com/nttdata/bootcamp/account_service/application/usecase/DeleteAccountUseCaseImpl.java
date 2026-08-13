@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 /**
  * Service implementation of the {@link DeleteAccountUseCase} input port.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Validates existing account presence prior to deletion.
  * - Verifies that the account balance is strictly zero before allowing account closure.
  * - Prevents account deletion if remaining monetary balance exists in the account.

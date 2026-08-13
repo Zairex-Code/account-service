@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 /**
  * Service implementation of the {@link GetAccountUseCase} input port.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Delegates reactive query operations to the output persistence port {@link AccountPersistencePort}.
  * - Emits log traces for non-blocking audit tracking during read operations.
  * - Guarantees non-blocking execution using WebFlux reactive streams.

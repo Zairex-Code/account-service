@@ -16,7 +16,7 @@ import java.util.UUID;
 /**
  * Primary implementation of the {@link CreateAccountUseCase} input port.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Validates customer existence via external customer-service using {@link CustomerClientPort}.
  * - Verifies domain business constraints prior to initiating network or database calls.
  * - Auto-generates a unique 14-digit account number (191-XXXXXXXXXX) if absent.

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 /**
  * Service implementation of the {@link UpdateAccountUseCase} input port.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules :
  * - Validates existing account presence prior to updating.
  * - Protects immutable identity and audit attributes (id, accountNumber, customerId, createdAt).
  * - Merges modifiable business attributes (status, maintenanceFee, maxMonthlyTransactions, holders, signatories).

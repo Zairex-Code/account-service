@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * MongoDB document representation for the 'accounts' collection within the reactive persistence layer.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules:
  * - Maps database records directly to the 'accounts' collection in MongoDB (account_db).
  * - Enforces unique B-Tree indexing on the 'account_number' field for fast searches.
  * - Decouples NoSQL mapping annotations (@Document, @Id, @Field) from pure domain entities.
