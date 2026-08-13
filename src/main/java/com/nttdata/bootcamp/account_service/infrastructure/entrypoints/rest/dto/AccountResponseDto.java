@@ -5,94 +5,91 @@ import com.nttdata.bootcamp.account_service.domain.model.AccountStatus;
 import com.nttdata.bootcamp.account_service.domain.model.AccountType;
 import java.time.LocalDateTime;
 import java.util.List;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 /**
  * Data Transfer Object representing the outbound HTTP REST response payload for bank account operations.
  * <p>
- * Technical & Business Rules:
- * - Encapsulates account details returned to external clients and API Consumers.
- * - Hides internal infrastructure details while providing complete financial domain information.
- * - Ensures immutability and consistent serialisation format across all REST endpoints.
+ * Technical & Business Rules :
+ * - Implemented as an immutable Java 17 Record for high-performance serialisation and thread safety.
+ * - Encapsulates account details returned to external API clients without exposing database entities.
+ * - Supports Lombok @Builder on records for fluent instantiation inside mappers.
  * </p>
-
+ *
+ * @author NTT DATA Bootcamp Team
+ * @version 1.0
  */
-@Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AccountResponseDto {
+public record AccountResponseDto(
 
-    /**
-     * Unique database primary key identifier of the bank account.
-     */
-    private String id;
+        /**
+         * Unique database primary key identifier of the bank account.
+         */
+        String id,
 
-    /**
-     * Unique 14-digit public bank account number (e.g., "191-0048291042").
-     */
-    private String accountNumber;
+        /**
+         * Unique 14-digit public bank account number (e.g., "191-0048291042").
+         */
+        String accountNumber,
 
-    /**
-     * Unique identifier of the customer owning this bank account.
-     */
-    private String customerId;
+        /**
+         * Unique identifier of the customer owning this bank account.
+         */
+        String customerId,
 
-    /**
-     * Passive financial product classification (SAVINGS, CURRENT, FIXED_TERM).
-     */
-    private AccountType type;
+        /**
+         * Passive financial product classification (SAVINGS, CURRENT, FIXED_TERM).
+         */
+        AccountType type,
 
-    /**
-     * Current operational status of the account (ACTIVE, BLOCKED, INACTIVE, CLOSED).
-     */
-    private AccountStatus status;
+        /**
+         * Current operational status of the account (ACTIVE, BLOCKED, INACTIVE, CLOSED).
+         */
+        AccountStatus status,
 
-    /**
-     * Current available monetary balance in the account.
-     */
-    private Double balance;
+        /**
+         * Current available monetary balance in the account.
+         */
+        Double balance,
 
-    /**
-     * Monthly maintenance fee applied to current accounts.
-     */
-    private Double maintenanceFee;
+        /**
+         * Monthly maintenance fee applied to current accounts.
+         */
+        Double maintenanceFee,
 
-    /**
-     * Maximum number of fee-free monthly transactions allowed.
-     */
-    private Integer maxMonthlyTransactions;
+        /**
+         * Maximum number of fee-free monthly transactions allowed.
+         */
+        Integer maxMonthlyTransactions,
 
-    /**
-     * Total number of transactions performed within the current monthly cycle.
-     */
-    private Integer currentMonthlyTransactions;
+        /**
+         * Total number of transactions performed within the current monthly cycle.
+         */
+        Integer currentMonthlyTransactions,
 
-    /**
-     * Specific calendar day of the month permitted for fixed-term transactions.
-     */
-    private Integer allowedTransactionDay;
+        /**
+         * Specific calendar day of the month permitted for fixed-term transactions.
+         */
+        Integer allowedTransactionDay,
 
-    /**
-     * Collection of customer IDs acting as joint account holders.
-     */
-    private List<String> holders;
+        /**
+         * Collection of customer IDs acting as joint account holders.
+         */
+        List<String> holders,
 
-    /**
-     * Collection of customer IDs acting as legal authorized signatories.
-     */
-    private List<String> signatories;
+        /**
+         * Collection of customer IDs acting as legal authorized signatories.
+         */
+        List<String> signatories,
 
-    /**
-     * Audit timestamp indicating when the account was opened.
-     */
-    private LocalDateTime createdAt;
+        /**
+         * Audit timestamp indicating when the account was opened.
+         */
+        LocalDateTime createdAt,
 
-    /**
-     * Audit timestamp indicating the latest modification date and time.
-     */
-    private LocalDateTime updatedAt;
+        /**
+         * Audit timestamp indicating the latest modification date and time.
+         */
+        LocalDateTime updatedAt
+) {
 }
