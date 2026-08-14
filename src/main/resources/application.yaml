@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: account-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
   data:
     mongodb:
       uri: mongodb://localhost:27017/account_db
