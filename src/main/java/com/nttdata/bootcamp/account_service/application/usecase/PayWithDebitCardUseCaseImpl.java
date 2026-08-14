@@ -7,7 +7,6 @@ import com.nttdata.bootcamp.account_service.domain.port.input.PayWithDebitCardUs
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DebitCardPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DomainEventPublisher;
-import com.nttdata.bootcamp.account_service.domain.port.output.MovementClientPort;
 import io.reactivex.rxjava3.core.Single;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +18,8 @@ import org.springframework.stereotype.Service;
  * Technical & Business Rules:
  * - Validates the debit card exists and is ACTIVE.
  * - Debits the linked account via the rich domain method {@link Account#withdraw}.
- * - Records the movement in the ledger.
+ * - Publishes a {@link DebitCardPaymentEvent} domain event; the movement is recorded
+ *   asynchronously by transaction-service consuming the event (event-driven).
  * </p>
  */
 @Slf4j
@@ -29,7 +29,6 @@ public class PayWithDebitCardUseCaseImpl implements PayWithDebitCardUseCase {
 
     private final DebitCardPersistencePort debitCardPersistencePort;
     private final AccountPersistencePort accountPersistencePort;
-    private final MovementClientPort movementClientPort;
     private final DomainEventPublisher domainEventPublisher;
 
     @Override
@@ -62,10 +61,7 @@ public class PayWithDebitCardUseCaseImpl implements PayWithDebitCardUseCase {
                             .flatMap(saved -> {
                                 DebitCardPaymentEvent event = new DebitCardPaymentEvent(
                                         saved.getId(), card.getId(), amount, System.currentTimeMillis());
-                                return movementClientPort
-                                        .recordMovement(saved.getId(), "ACCOUNT", "WITHDRAWAL", amount)
-                                        .andThen(domainEventPublisher.publish(
-                                                "debit-card-payments", event))
+                                return domainEventPublisher.publish("debit-card-payments", event)
                                         .andThen(Single.just(saved));
                             });
                 })
