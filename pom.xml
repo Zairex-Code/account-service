@@ -65,6 +65,12 @@
 			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
 		</dependency>
 
+		<!-- Spring Cloud Circuit Breaker (Resilience4j Reactive) for inter-service fault tolerance -->
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+		</dependency>
+
 		<!-- Springdoc OpenAPI UI for Reactive WebFlux -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
