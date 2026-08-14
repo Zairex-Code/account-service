@@ -5,16 +5,18 @@ package com.nttdata.bootcamp.account_service.domain.model;
  * <p>
  * Technical & Business Rules:
  * - Pure Java record decoupled from the customer-service transport and persistence layers.
- * - Exposes the minimal customer context (type and profile) used by account business rules.
+ * - Exposes the minimal customer context (type, profile and overdue-debit status) used by account business rules.
  * </p>
  *
- * @param id      Unique customer primary database identifier.
- * @param type    Customer segment (PERSONAL or BUSINESS).
- * @param profile Commercial profile (STANDARD, VIP, PYME).
+ * @param id              Unique customer primary database identifier.
+ * @param type            Customer segment (PERSONAL or BUSINESS).
+ * @param profile         Commercial profile (STANDARD, VIP, PYME).
+ * @param hasOverdueDebit Whether the customer has overdue debit and is blocked.
  */
 public record CustomerInfo(
         String id,
         CustomerType type,
-        CustomerProfile profile
+        CustomerProfile profile,
+        Boolean hasOverdueDebit
 ) {
 }
