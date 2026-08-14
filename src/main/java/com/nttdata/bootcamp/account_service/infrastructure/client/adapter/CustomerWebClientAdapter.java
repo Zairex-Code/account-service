@@ -3,8 +3,11 @@ package com.nttdata.bootcamp.account_service.infrastructure.client.adapter;
 import com.nttdata.bootcamp.account_service.domain.model.CustomerInfo;
 import com.nttdata.bootcamp.account_service.domain.port.output.CustomerClientPort;
 import io.reactivex.rxjava3.core.Maybe;
+import java.time.Duration;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -29,6 +32,8 @@ public class CustomerWebClientAdapter implements CustomerClientPort {
 
     private final WebClient.Builder webClientBuilder;
 
+    private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
+
     /**
      * Retrieves the customer information required to enforce account holding limits.
      *
@@ -39,20 +44,24 @@ public class CustomerWebClientAdapter implements CustomerClientPort {
     public Maybe<CustomerInfo> getById(String customerId) {
         log.debug("Initiating HTTP GET request for customer ID: {}", customerId);
 
-        Mono<CustomerInfo> result = webClientBuilder.build()
+        Mono<CustomerInfo> call = webClientBuilder.build()
                 .get()
                 .uri("http://customer-service/api/v1/customers/{id}", customerId)
                 .retrieve()
                 .bodyToMono(CustomerInfo.class)
-                .onErrorResume(WebClientResponseException.NotFound.class, ex -> {
-                    log.warn("Customer ID '{}' not found in customer-service", customerId);
-                    return Mono.empty();
-                })
-                .onErrorResume(ex -> {
-                    log.error("Communication error for customer ID '{}': {}",
-                            customerId, ex.getMessage());
-                    return Mono.empty();
-                });
+                .timeout(Duration.ofSeconds(2));
+
+        ReactiveCircuitBreaker circuitBreaker = circuitBreakerFactory.create("customer-service");
+
+        Mono<CustomerInfo> result = circuitBreaker.run(call, throwable -> {
+            if (throwable instanceof WebClientResponseException.NotFound) {
+                log.warn("Customer ID '{}' not found in customer-service", customerId);
+            } else {
+                log.error("Communication error for customer ID '{}': {}",
+                        customerId, throwable.getMessage());
+            }
+            return Mono.empty();
+        });
 
         return RxJava3Adapter.monoToMaybe(result);
     }
