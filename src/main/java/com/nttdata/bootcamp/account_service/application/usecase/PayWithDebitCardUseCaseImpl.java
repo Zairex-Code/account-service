@@ -1,10 +1,12 @@
 package com.nttdata.bootcamp.account_service.application.usecase;
 
+import com.nttdata.bootcamp.account_service.domain.event.DebitCardPaymentEvent;
 import com.nttdata.bootcamp.account_service.domain.model.Account;
 import com.nttdata.bootcamp.account_service.domain.model.DebitCardStatus;
 import com.nttdata.bootcamp.account_service.domain.port.input.PayWithDebitCardUseCase;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DebitCardPersistencePort;
+import com.nttdata.bootcamp.account_service.domain.port.output.DomainEventPublisher;
 import com.nttdata.bootcamp.account_service.domain.port.output.MovementClientPort;
 import io.reactivex.rxjava3.core.Single;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class PayWithDebitCardUseCaseImpl implements PayWithDebitCardUseCase {
     private final DebitCardPersistencePort debitCardPersistencePort;
     private final AccountPersistencePort accountPersistencePort;
     private final MovementClientPort movementClientPort;
+    private final DomainEventPublisher domainEventPublisher;
 
     @Override
     public Single<Account> pay(String cardId, Double amount) {
@@ -56,9 +59,15 @@ public class PayWithDebitCardUseCaseImpl implements PayWithDebitCardUseCase {
                                             + "' was not found")))
                             .map(account -> account.withdraw(amount))
                             .flatMap(accountPersistencePort::save)
-                            .flatMap(saved -> movementClientPort
-                                    .recordMovement(saved.getId(), "ACCOUNT", "WITHDRAWAL", amount)
-                                    .andThen(Single.just(saved)));
+                            .flatMap(saved -> {
+                                DebitCardPaymentEvent event = new DebitCardPaymentEvent(
+                                        saved.getId(), card.getId(), amount, System.currentTimeMillis());
+                                return movementClientPort
+                                        .recordMovement(saved.getId(), "ACCOUNT", "WITHDRAWAL", amount)
+                                        .andThen(domainEventPublisher.publish(
+                                                "debit-card-payments", event))
+                                        .andThen(Single.just(saved));
+                            });
                 })
                 .doOnSuccess(account -> log.info(
                         "Debit card payment applied. Account ID '{}'. New balance: {}",
