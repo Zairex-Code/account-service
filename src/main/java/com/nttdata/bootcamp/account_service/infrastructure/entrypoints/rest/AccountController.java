@@ -5,11 +5,13 @@ import com.nttdata.bootcamp.account_service.domain.port.input.CreateAccountUseCa
 import com.nttdata.bootcamp.account_service.domain.port.input.DeleteAccountUseCase;
 import com.nttdata.bootcamp.account_service.domain.port.input.DepositAccountUseCase;
 import com.nttdata.bootcamp.account_service.domain.port.input.GetAccountUseCase;
+import com.nttdata.bootcamp.account_service.domain.port.input.TransferAccountUseCase;
 import com.nttdata.bootcamp.account_service.domain.port.input.UpdateAccountUseCase;
 import com.nttdata.bootcamp.account_service.domain.port.input.WithdrawAccountUseCase;
 import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.dto.AccountRequestDto;
 import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.dto.AccountResponseDto;
 import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.dto.TransactionRequestDto;
+import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.dto.TransferRequestDto;
 import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.mapper.AccountRestMapper;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
@@ -53,6 +55,7 @@ public class AccountController {
     private final DeleteAccountUseCase deleteAccountUseCase;
     private final DepositAccountUseCase depositAccountUseCase;
     private final WithdrawAccountUseCase withdrawAccountUseCase;
+    private final TransferAccountUseCase transferAccountUseCase;
     private final AccountRestMapper accountRestMapper;
 
     /**
@@ -194,5 +197,23 @@ public class AccountController {
         return withdrawAccountUseCase.withdraw(id, requestDto.amount())
                 .map(accountRestMapper::toResponseDto)
                 .doOnSuccess(response -> log.info("Withdrawal applied via REST to account ID: {}", id));
+    }
+
+    /**
+     * Transfers a positive monetary amount from one account to another within the same bank.
+     *
+     * @param id         Source account primary database identifier string.
+     * @param requestDto Validated request payload containing destination account ID and amount.
+     * @return A {@link Single} emitting the updated source {@link AccountResponseDto}.
+     */
+    @PostMapping("/{id}/transfers")
+    @ResponseStatus(HttpStatus.OK)
+    public Single<AccountResponseDto> transfer(@PathVariable String id,
+                                                @Valid @RequestBody TransferRequestDto requestDto) {
+        log.info("REST request received to transfer from account ID '{}' to '{}'",
+                id, requestDto.destinationAccountId());
+        return transferAccountUseCase.transfer(id, requestDto.destinationAccountId(), requestDto.amount())
+                .map(accountRestMapper::toResponseDto)
+                .doOnSuccess(response -> log.info("Transfer applied via REST from account ID: {}", id));
     }
 }
