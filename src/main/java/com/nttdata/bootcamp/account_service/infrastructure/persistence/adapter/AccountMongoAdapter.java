@@ -9,6 +9,7 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -101,6 +102,24 @@ public class AccountMongoAdapter implements AccountPersistencePort {
         log.debug("Streaming account documents from MongoDB for customer ID: {} and type: {}",
                 customerId, type);
         return repository.findByCustomerIdAndType(customerId, type)
+                .map(mapper::toDomain);
+    }
+
+    /**
+     * Streams all account entities of a specific customer opened within a date range.
+     *
+     * @param customerId Unique customer database primary key string.
+     * @param start      Inclusive start of the creation date range.
+     * @param end        Inclusive end of the creation date range.
+     * @return A {@link Flowable} streaming matching {@link Account} domain entities.
+     */
+    @Override
+    public Flowable<Account> findByCustomerIdAndDateRange(String customerId,
+                                                          LocalDateTime start,
+                                                          LocalDateTime end) {
+        log.debug("Streaming account documents from MongoDB for customer ID: {} between {} and {}",
+                customerId, start, end);
+        return repository.findByCustomerIdAndCreatedAtBetween(customerId, start, end)
                 .map(mapper::toDomain);
     }
 
