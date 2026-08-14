@@ -105,6 +105,11 @@ public class CreateAccountUseCaseImpl implements CreateAccountUseCase {
     private Single<Account> enforceHoldingLimits(Account account, CustomerInfo customerInfo) {
         AccountType requestedType = account.getType();
 
+        if (Boolean.TRUE.equals(customerInfo.hasOverdueDebit())) {
+            return Single.error(new IllegalStateException(
+                    "Cannot open account: customer has overdue debit and is blocked"));
+        }
+
         if (customerInfo.type() == CustomerType.PERSONAL) {
             if (requestedType == AccountType.FIXED_TERM) {
                 return Single.just(account);
