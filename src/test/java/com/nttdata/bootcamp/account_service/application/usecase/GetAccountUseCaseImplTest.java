@@ -12,6 +12,7 @@ import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
 import io.reactivex.rxjava3.observers.TestObserver;
 import io.reactivex.rxjava3.subscribers.TestSubscriber;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -147,5 +148,30 @@ class GetAccountUseCaseImplTest {
         testSubscriber.assertComplete();
 
         verify(accountPersistencePort).findAll();
+    }
+
+    @Test
+    @DisplayName("Should stream a consolidated report of accounts within a date range")
+    void findByCustomerIdAndDateRange_WhenAccountsExist_ShouldStreamAccounts() {
+        // Given
+        String customerId = "CUST-100";
+        LocalDateTime start = LocalDateTime.of(2026, 1, 1, 0, 0);
+        LocalDateTime end = LocalDateTime.of(2026, 12, 31, 23, 59, 59);
+
+        Account acc1 = Account.builder().id("ACC-001").customerId(customerId).build();
+        Account acc2 = Account.builder().id("ACC-002").customerId(customerId).build();
+
+        when(accountPersistencePort.findByCustomerIdAndDateRange(customerId, start, end))
+                .thenReturn(Flowable.just(acc1, acc2));
+
+        // When
+        TestSubscriber<Account> testSubscriber =
+                getAccountUseCase.findByCustomerIdAndDateRange(customerId, start, end).test();
+
+        // Then
+        testSubscriber.assertValueCount(2);
+        testSubscriber.assertComplete();
+
+        verify(accountPersistencePort).findByCustomerIdAndDateRange(customerId, start, end);
     }
 }
