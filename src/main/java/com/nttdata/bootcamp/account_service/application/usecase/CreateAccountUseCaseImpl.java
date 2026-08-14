@@ -33,6 +33,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class CreateAccountUseCaseImpl implements CreateAccountUseCase {
 
+    private static final int SAVINGS_MAX_MONTHLY_TRANSACTIONS = 5;
+    private static final int FIXED_TERM_MAX_MONTHLY_TRANSACTIONS = 1;
+    private static final double TRANSACTION_COMMISSION = 2.0;
+
     private final AccountPersistencePort accountPersistencePort;
     private final CustomerClientPort customerClientPort;
 
@@ -140,10 +144,45 @@ public class CreateAccountUseCaseImpl implements CreateAccountUseCase {
         return account.toBuilder()
                 .accountNumber(accountNumber)
                 .status(AccountStatus.ACTIVE)
+                .maxMonthlyTransactions(resolveMaxMonthlyTransactions(account.getType()))
+                .transactionCommission(resolveTransactionCommission(account.getType()))
                 .currentMonthlyTransactions(0)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Resolves the fee-free monthly transaction limit for the requested account type.
+     * <p>
+     * Business Rules:
+     * - SAVINGS: limited fee-free transactions per month.
+     * - FIXED_TERM: a single transaction day per month.
+     * - CURRENT: unlimited transactions (null limit).
+     * </p>
+     *
+     * @param type Account product type.
+     * @return The monthly transaction limit, or {@code null} for unlimited accounts.
+     */
+    private Integer resolveMaxMonthlyTransactions(AccountType type) {
+        return switch (type) {
+            case SAVINGS -> SAVINGS_MAX_MONTHLY_TRANSACTIONS;
+            case FIXED_TERM -> FIXED_TERM_MAX_MONTHLY_TRANSACTIONS;
+            case CURRENT -> null;
+        };
+    }
+
+    /**
+     * Resolves the automatic transaction commission charged after exceeding the fee-free limit.
+     *
+     * @param type Account product type.
+     * @return The commission amount, or {@code null} when no commission applies.
+     */
+    private Double resolveTransactionCommission(AccountType type) {
+        return switch (type) {
+            case SAVINGS, FIXED_TERM -> TRANSACTION_COMMISSION;
+            case CURRENT -> null;
+        };
     }
 
     /**
