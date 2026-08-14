@@ -9,6 +9,9 @@ import com.nttdata.bootcamp.account_service.domain.model.Account;
 import com.nttdata.bootcamp.account_service.domain.model.AccountStatus;
 import com.nttdata.bootcamp.account_service.domain.model.AccountType;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,8 +19,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 /**
  * Unit test suite for {@link UpdateAccountUseCaseImpl}.
@@ -25,8 +26,7 @@ import reactor.test.StepVerifier;
  * Technical & Business Rules:
  * - Tests reactive account update operations and domain merging rules.
  * - Validates fail-fast exceptions on invalid inputs (null ID, null payload, missing record).
- * - Employs StepVerifier to assert Mono emissions asynchronously without blocking Netty threads.
- * - Achieves 100% line and branch coverage for account update business orchestration.
+ * - Employs TestObserver to assert Single emissions asynchronously without blocking Netty threads.
  * </p>
 
  * @author NTT DATA Bootcamp Team
@@ -67,18 +67,17 @@ class UpdateAccountUseCaseImplTest {
                 .holders(List.of("HOLDER-01"))
                 .build();
 
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.just(existingAccount));
-        when(accountPersistencePort.save(any(Account.class))).thenReturn(Mono.just(savedAccount));
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.just(existingAccount));
+        when(accountPersistencePort.save(any(Account.class))).thenReturn(Single.just(savedAccount));
 
         // When
-        Mono<Account> result = updateAccountUseCase.execute(id, updatePayload);
+        TestObserver<Account> testObserver = updateAccountUseCase.execute(id, updatePayload).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectNextMatches(account -> account.getId().equals(id)
-                        && account.getBalance().equals(500.0)
-                        && account.getStatus() == AccountStatus.BLOCKED)
-                .verifyComplete();
+        testObserver.assertValue(account -> account.getId().equals(id)
+                && account.getBalance().equals(500.0)
+                && account.getStatus() == AccountStatus.BLOCKED);
+        testObserver.assertComplete();
 
         verify(accountPersistencePort).findById(id);
         verify(accountPersistencePort).save(any(Account.class));
@@ -91,16 +90,14 @@ class UpdateAccountUseCaseImplTest {
         String id = "NON-EXISTENT";
         Account updatePayload = Account.builder().balance(300.0).build();
 
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.empty());
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.empty());
 
         // When
-        Mono<Account> result = updateAccountUseCase.execute(id, updatePayload);
+        TestObserver<Account> testObserver = updateAccountUseCase.execute(id, updatePayload).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("was not found"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("was not found"));
 
         verify(accountPersistencePort).findById(id);
         verify(accountPersistencePort, never()).save(any());
@@ -113,13 +110,11 @@ class UpdateAccountUseCaseImplTest {
         Account updatePayload = Account.builder().balance(300.0).build();
 
         // When
-        Mono<Account> result = updateAccountUseCase.execute("   ", updatePayload);
+        TestObserver<Account> testObserver = updateAccountUseCase.execute("   ", updatePayload).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("cannot be null or blank"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("cannot be null or blank"));
 
         verify(accountPersistencePort, never()).findById(any());
         verify(accountPersistencePort, never()).save(any());
@@ -129,13 +124,11 @@ class UpdateAccountUseCaseImplTest {
     @DisplayName("Should emit error when update payload is null")
     void execute_WhenPayloadIsNull_ShouldEmitIllegalArgumentException() {
         // When
-        Mono<Account> result = updateAccountUseCase.execute("ACC-001", null);
+        TestObserver<Account> testObserver = updateAccountUseCase.execute("ACC-001", null).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("cannot be null"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("cannot be null"));
 
         verify(accountPersistencePort, never()).findById(any());
         verify(accountPersistencePort, never()).save(any());

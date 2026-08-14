@@ -1,11 +1,14 @@
 package com.nttdata.bootcamp.account_service.infrastructure.client.adapter;
 
+import com.nttdata.bootcamp.account_service.domain.model.CustomerInfo;
 import com.nttdata.bootcamp.account_service.domain.port.output.CustomerClientPort;
+import io.reactivex.rxjava3.core.Maybe;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.adapter.rxjava.RxJava3Adapter;
 import reactor.core.publisher.Mono;
 
 /**
@@ -13,40 +16,44 @@ import reactor.core.publisher.Mono;
  * <p>
  * Technical & Business Rules:
  * - Implements Hexagonal Architecture secondary output port for HTTP microservice communication.
- * - Executes non-blocking reactive HTTP GET requests to validate customer existence in customer-service.
+ * - Executes non-blocking reactive HTTP GET requests to retrieve customer type/profile.
  * - Resolves service URLs dynamically via Eureka Service Discovery (http://customer-service).
  * - Handles HTTP 404 Not Found and network connection exceptions gracefully without breaking reactive pipelines.
+ * - Bridges Reactor (WebClient) responses to RxJava 3 via {@link RxJava3Adapter}.
  * </p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CustomerWebClientAdapter implements CustomerClientPort {
+
     private final WebClient.Builder webClientBuilder;
 
     /**
-     * Verifies whether a customer exists in the core customer-service microservice asynchronously.
+     * Retrieves the customer information required to enforce account holding limits.
      *
-     * @param customerId Unique primary database identifier of the customer.
-     * @return A {@link Mono} emitting true if customer exists; false if not found or on network error.
+     * @param customerId Unique customer primary database identifier.
+     * @return A {@link Maybe} emitting the {@link CustomerInfo}, or empty if not found.
      */
     @Override
-    public Mono<Boolean> existsById(String customerId) {
-        log.debug("Initiating reactive HTTP GET request to verify existence of customer ID: {}", customerId);
+    public Maybe<CustomerInfo> getById(String customerId) {
+        log.debug("Initiating HTTP GET request for customer ID: {}", customerId);
 
-        return webClientBuilder.build()
+        Mono<CustomerInfo> result = webClientBuilder.build()
                 .get()
                 .uri("http://customer-service/api/v1/customers/{id}", customerId)
                 .retrieve()
-                .toBodilessEntity()
-                .map(response -> response.getStatusCode().is2xxSuccessful())
+                .bodyToMono(CustomerInfo.class)
                 .onErrorResume(WebClientResponseException.NotFound.class, ex -> {
-                    log.warn("Customer ID '{}' was not found in customer-service (HTTP 404)", customerId);
-                    return Mono.just(false);
+                    log.warn("Customer ID '{}' not found in customer-service", customerId);
+                    return Mono.empty();
                 })
                 .onErrorResume(ex -> {
-                    log.error("Communication error invoking customer-service for ID '{}': {}", customerId, ex.getMessage());
-                    return Mono.just(false);
+                    log.error("Communication error for customer ID '{}': {}",
+                            customerId, ex.getMessage());
+                    return Mono.empty();
                 });
+
+        return RxJava3Adapter.monoToMaybe(result);
     }
 }

@@ -1,7 +1,7 @@
 package com.nttdata.bootcamp.account_service.domain.port.input;
 
 import com.nttdata.bootcamp.account_service.domain.model.Account;
-import reactor.core.publisher.Mono;
+import io.reactivex.rxjava3.core.Single;
 
 
 /**
@@ -19,7 +19,7 @@ public interface CreateAccountUseCase {
      * Evaluates domain business rules and creates a new bank account asynchronously
      *
      * @param account Domain entity instance containing the requested account parameters
-     * @return A Mono emitting the newly persisted Account domain entity.
+     * @return A Single emitting the newly persisted Account domain entity.
      */
-    Mono<Account> execute(Account account);
+    Single<Account> execute(Account account);
 }

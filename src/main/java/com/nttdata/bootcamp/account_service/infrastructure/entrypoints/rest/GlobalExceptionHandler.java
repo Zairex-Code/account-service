@@ -3,6 +3,7 @@ package com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest;
 
 import com.nttdata.bootcamp.account_service.domain.exception.InsufficientBalanceException;
 import com.nttdata.bootcamp.account_service.infrastructure.entrypoints.rest.dto.ErrorResponseDto;
+import io.reactivex.rxjava3.core.Single;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.support.WebExchangeBindException;
 import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
 
 /**
  * Global reactive exception handler providing centralized RFC 7807 error responses for the REST API.
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
      * @return A {@link Mono} emitting a {@link ResponseEntity} with HTTP 400 Bad Request status.
      */
     @ExceptionHandler(IllegalArgumentException.class)
-    public Mono<ResponseEntity<ErrorResponseDto>> handleIllegalArgumentException(
+    public Single<ResponseEntity<ErrorResponseDto>> handleIllegalArgumentException(
             IllegalArgumentException ex, ServerWebExchange exchange) {
         log.warn("Business validation rule violated: {}", ex.getMessage());
 
@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
                 .path(exchange.getRequest().getPath().value())
                 .build();
 
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse));
+        return Single.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse));
     }
 
     /**
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
      * @return A {@link Mono} emitting a {@link ResponseEntity} with HTTP 409 Conflict status.
      */
     @ExceptionHandler(IllegalStateException.class)
-    public Mono<ResponseEntity<ErrorResponseDto>> handleIllegalStateException(
+    public Single<ResponseEntity<ErrorResponseDto>> handleIllegalStateException(
             IllegalStateException ex, ServerWebExchange exchange) {
         log.warn("Operational state constraint violated: {}", ex.getMessage());
 
@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
                 .path(exchange.getRequest().getPath().value())
                 .build();
 
-        return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse));
+        return Single.just(ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse));
     }
 
     /**
@@ -86,7 +86,7 @@ public class GlobalExceptionHandler {
      * @return A {@link Mono} emitting a {@link ResponseEntity} with HTTP 422 Unprocessable Entity status.
      */
     @ExceptionHandler(InsufficientBalanceException.class)
-    public Mono<ResponseEntity<ErrorResponseDto>> handleInsufficientBalanceException(
+    public Single<ResponseEntity<ErrorResponseDto>> handleInsufficientBalanceException(
             InsufficientBalanceException ex, ServerWebExchange exchange) {
         log.warn("Insufficient funds domain exception triggered: {}", ex.getMessage());
 
@@ -98,7 +98,7 @@ public class GlobalExceptionHandler {
                 .path(exchange.getRequest().getPath().value())
                 .build();
 
-        return Mono.just(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse));
+        return Single.just(ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse));
     }
 
     /**
@@ -109,7 +109,7 @@ public class GlobalExceptionHandler {
      * @return A {@link Mono} emitting a {@link ResponseEntity} with HTTP 400 Bad Request status.
      */
     @ExceptionHandler(WebExchangeBindException.class)
-    public Mono<ResponseEntity<ErrorResponseDto>> handleWebExchangeBindException(
+    public Single<ResponseEntity<ErrorResponseDto>> handleWebExchangeBindException(
             WebExchangeBindException ex, ServerWebExchange exchange) {
         log.warn("DTO request validation failed for path: {}", exchange.getRequest().getPath().value());
 
@@ -126,7 +126,7 @@ public class GlobalExceptionHandler {
                 .details(details)
                 .build();
 
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse));
+        return Single.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse));
     }
 
     /**
@@ -137,7 +137,7 @@ public class GlobalExceptionHandler {
      * @return A {@link Mono} emitting a {@link ResponseEntity} with HTTP 500 Internal Server Error status.
      */
     @ExceptionHandler(Exception.class)
-    public Mono<ResponseEntity<ErrorResponseDto>> handleGenericException(
+    public Single<ResponseEntity<ErrorResponseDto>> handleGenericException(
             Exception ex, ServerWebExchange exchange) {
         log.error("Unhandled internal server exception encountered", ex);
 
@@ -149,6 +149,6 @@ public class GlobalExceptionHandler {
                 .path(exchange.getRequest().getPath().value())
                 .build();
 
-        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+        return Single.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
     }
 }

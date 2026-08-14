@@ -8,14 +8,15 @@ import com.nttdata.bootcamp.account_service.domain.model.Account;
 import com.nttdata.bootcamp.account_service.domain.model.AccountStatus;
 import com.nttdata.bootcamp.account_service.domain.model.AccountType;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
+import io.reactivex.rxjava3.core.Completable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.observers.TestObserver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 /**
  * Unit test suite for {@link DeleteAccountUseCaseImpl}.
@@ -24,7 +25,7 @@ import reactor.test.StepVerifier;
  * - Tests reactive account closure and deletion orchestration.
  * - Enforces zero balance check rule prior to account deletion.
  * - Asserts fail-fast behavior for invalid inputs (null/blank ID, non-existent record).
- * - Employs StepVerifier to assert async completion and error signals non-blockingly.
+ * - Employs TestObserver to assert async completion and error signals non-blockingly.
  * </p>
  *
  * @author NTT DATA Bootcamp Team
@@ -52,15 +53,14 @@ class DeleteAccountUseCaseImplTest {
                 .status(AccountStatus.ACTIVE)
                 .build();
 
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.just(mockAccount));
-        when(accountPersistencePort.deleteById(id)).thenReturn(Mono.empty());
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.just(mockAccount));
+        when(accountPersistencePort.deleteById(id)).thenReturn(Completable.complete());
 
         // When
-        Mono<Void> result = deleteAccountUseCase.execute(id);
+        TestObserver<Void> testObserver = deleteAccountUseCase.execute(id).test();
 
         // Then
-        StepVerifier.create(result)
-                .verifyComplete();
+        testObserver.assertComplete();
 
         verify(accountPersistencePort).findById(id);
         verify(accountPersistencePort).deleteById(id);
@@ -79,16 +79,14 @@ class DeleteAccountUseCaseImplTest {
                 .status(AccountStatus.ACTIVE)
                 .build();
 
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.just(mockAccount));
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.just(mockAccount));
 
         // When
-        Mono<Void> result = deleteAccountUseCase.execute(id);
+        TestObserver<Void> testObserver = deleteAccountUseCase.execute(id).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalStateException
-                        && throwable.getMessage().contains("Balance must be exactly 0.0 before closure"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalStateException
+                && throwable.getMessage().contains("Balance must be exactly 0.0 before closure"));
 
         verify(accountPersistencePort).findById(id);
         verify(accountPersistencePort, never()).deleteById(any());
@@ -99,16 +97,14 @@ class DeleteAccountUseCaseImplTest {
     void execute_WhenAccountDoesNotExist_ShouldEmitIllegalArgumentException() {
         // Given
         String id = "NON-EXISTENT";
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.empty());
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.empty());
 
         // When
-        Mono<Void> result = deleteAccountUseCase.execute(id);
+        TestObserver<Void> testObserver = deleteAccountUseCase.execute(id).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("was not found"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("was not found"));
 
         verify(accountPersistencePort).findById(id);
         verify(accountPersistencePort, never()).deleteById(any());
@@ -118,13 +114,11 @@ class DeleteAccountUseCaseImplTest {
     @DisplayName("Should emit error when account ID is null or blank")
     void execute_WhenIdIsBlankOrNull_ShouldEmitIllegalArgumentException() {
         // When
-        Mono<Void> result = deleteAccountUseCase.execute("   ");
+        TestObserver<Void> testObserver = deleteAccountUseCase.execute("   ").test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("cannot be null or blank"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("cannot be null or blank"));
 
         verify(accountPersistencePort, never()).findById(any());
         verify(accountPersistencePort, never()).deleteById(any());

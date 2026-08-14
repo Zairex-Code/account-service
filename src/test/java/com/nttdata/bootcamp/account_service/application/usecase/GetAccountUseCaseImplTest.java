@@ -7,15 +7,17 @@ import com.nttdata.bootcamp.account_service.domain.model.Account;
 import com.nttdata.bootcamp.account_service.domain.model.AccountStatus;
 import com.nttdata.bootcamp.account_service.domain.model.AccountType;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
+import io.reactivex.rxjava3.core.Flowable;
+import io.reactivex.rxjava3.core.Maybe;
+import io.reactivex.rxjava3.core.Single;
+import io.reactivex.rxjava3.observers.TestObserver;
+import io.reactivex.rxjava3.subscribers.TestSubscriber;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.test.StepVerifier;
 
 /**
  * Unit test suite for {@link GetAccountUseCaseImpl}.
@@ -23,8 +25,7 @@ import reactor.test.StepVerifier;
  * Technical & Business Rules:
  * - Tests reactive retrieval queries (findById, findByAccountNumber, findByCustomerId, findAll).
  * - Verifies empty stream emission and error triggers when records are missing.
- * - Employs StepVerifier to assert Mono and Flux emissions asynchronously.
- * - Achieves 100% line and branch coverage for account query operations.
+ * - Employs TestObserver/TestSubscriber to assert Single, Maybe and Flowable emissions asynchronously.
  * </p>
 
  * @author NTT DATA Bootcamp Team
@@ -52,18 +53,17 @@ class GetAccountUseCaseImplTest {
                 .status(AccountStatus.ACTIVE)
                 .build();
 
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.just(mockAccount));
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.just(mockAccount));
 
         // When
-        Mono<Account> result = getAccountUseCase.findById(id);
+        TestObserver<Account> testObserver = getAccountUseCase.findById(id).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectNextMatches(account -> account.getId().equals(id)
-                        && account.getAccountNumber().equals("191-1111111111")
-                        && account.getStatus() == AccountStatus.ACTIVE
-                        && account.getBalance().equals(250.0))
-                .verifyComplete();
+        testObserver.assertValue(account -> account.getId().equals(id)
+                && account.getAccountNumber().equals("191-1111111111")
+                && account.getStatus() == AccountStatus.ACTIVE
+                && account.getBalance().equals(250.0));
+        testObserver.assertComplete();
 
         verify(accountPersistencePort).findById(id);
     }
@@ -73,16 +73,14 @@ class GetAccountUseCaseImplTest {
     void findById_WhenAccountDoesNotExist_ShouldEmitIllegalArgumentException() {
         // Given
         String id = "NON-EXISTENT";
-        when(accountPersistencePort.findById(id)).thenReturn(Mono.empty());
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.empty());
 
         // When
-        Mono<Account> result = getAccountUseCase.findById(id);
+        TestObserver<Account> testObserver = getAccountUseCase.findById(id).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectErrorMatches(throwable -> throwable instanceof IllegalArgumentException
-                        && throwable.getMessage().contains("was not found"))
-                .verify();
+        testObserver.assertError(throwable -> throwable instanceof IllegalArgumentException
+                && throwable.getMessage().contains("was not found"));
 
         verify(accountPersistencePort).findById(id);
     }
@@ -99,37 +97,35 @@ class GetAccountUseCaseImplTest {
                 .balance(1000.0)
                 .build();
 
-        when(accountPersistencePort.findByAccountNumber(accountNumber)).thenReturn(Mono.just(mockAccount));
+        when(accountPersistencePort.findByAccountNumber(accountNumber)).thenReturn(Maybe.just(mockAccount));
 
         // When
-        Mono<Account> result = getAccountUseCase.findByAccountNumber(accountNumber);
+        TestObserver<Account> testObserver = getAccountUseCase.findByAccountNumber(accountNumber).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectNextMatches(account -> account.getAccountNumber().equals(accountNumber)
-                        && account.getType() == AccountType.CURRENT)
-                .verifyComplete();
+        testObserver.assertValue(account -> account.getAccountNumber().equals(accountNumber)
+                && account.getType() == AccountType.CURRENT);
+        testObserver.assertComplete();
 
         verify(accountPersistencePort).findByAccountNumber(accountNumber);
     }
 
     @Test
     @DisplayName("Should stream all accounts belonging to a specific customer ID")
-    void findByCustomerId_WhenAccountsExist_ShouldStreamFluxOfAccounts() {
+    void findByCustomerId_WhenAccountsExist_ShouldStreamFlowableOfAccounts() {
         // Given
         String customerId = "CUST-100";
         Account acc1 = Account.builder().id("ACC-001").customerId(customerId).build();
         Account acc2 = Account.builder().id("ACC-002").customerId(customerId).build();
 
-        when(accountPersistencePort.findByCustomerId(customerId)).thenReturn(Flux.just(acc1, acc2));
+        when(accountPersistencePort.findByCustomerId(customerId)).thenReturn(Flowable.just(acc1, acc2));
 
         // When
-        Flux<Account> result = getAccountUseCase.findByCustomerId(customerId);
+        TestSubscriber<Account> testSubscriber = getAccountUseCase.findByCustomerId(customerId).test();
 
         // Then
-        StepVerifier.create(result)
-                .expectNextCount(2)
-                .verifyComplete();
+        testSubscriber.assertValueCount(2);
+        testSubscriber.assertComplete();
 
         verify(accountPersistencePort).findByCustomerId(customerId);
     }
@@ -141,15 +137,14 @@ class GetAccountUseCaseImplTest {
         Account acc1 = Account.builder().id("ACC-001").build();
         Account acc2 = Account.builder().id("ACC-002").build();
 
-        when(accountPersistencePort.findAll()).thenReturn(Flux.just(acc1, acc2));
+        when(accountPersistencePort.findAll()).thenReturn(Flowable.just(acc1, acc2));
 
         // When
-        Flux<Account> result = getAccountUseCase.findAll();
+        TestSubscriber<Account> testSubscriber = getAccountUseCase.findAll().test();
 
         // Then
-        StepVerifier.create(result)
-                .expectNextCount(2)
-                .verifyComplete();
+        testSubscriber.assertValueCount(2);
+        testSubscriber.assertComplete();
 
         verify(accountPersistencePort).findAll();
     }

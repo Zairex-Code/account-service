@@ -1,6 +1,6 @@
 package com.nttdata.bootcamp.account_service.domain.port.input;
 
-import reactor.core.publisher.Mono;
+import io.reactivex.rxjava3.core.Completable;
 
 /**
  * Input Port interface defining the contract for bank account deletion and closure workflow
@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
  * Technical & Business Rules:
  * - Pure Java domain interface decoupled from Spring Framework, MongoDB or transport layers.
  * - Enforces pre-deletion validation (Zero balance verification, no pending debits or active holds)
- * - Server as the primary entry point for soft-delete or physical account termination operations.
+ * - Serves as the primary entry point for soft-delete or physical account termination operations.
  */
 public interface DeleteAccountUseCase {
 
@@ -17,7 +17,7 @@ public interface DeleteAccountUseCase {
      * Evaluates domain closure conditions and executes account deletion asynchronous
      *
      * @param id Unique primary database identifier of the account to delete
-     * @return A Mono emitting void upon successful completion of deletion
+     * @return A Completable that completes upon successful completion of deletion
      */
-    Mono<Void> execute(String id);
+    Completable execute(String id);
 }
