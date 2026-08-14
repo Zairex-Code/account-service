@@ -9,7 +9,7 @@ import lombok.Builder;
 /**
  * Data Transfer Object representing a standardized RFC 7807 HTTP REST error response body.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules (NTT DATA / Banking Standards):
  * - Implemented as an immutable Java 17 Record for thread-safe error reporting across REST endpoints.
  * - Standardizes error structures across all financial microservices (RFC 7807 Problem Details).
  * - Prevents leakage of internal JVM stack traces to public API consumers.

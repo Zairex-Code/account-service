@@ -8,7 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 /**
  * Spring configuration class for reactive WebClient HTTP client beans.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules (NTT DATA / Banking Standards):
  * - Configures a Spring-managed {@link WebClient.Builder} bean for non-blocking HTTP calls.
  * - Applies {@link LoadBalanced} annotation to enable Netflix Eureka Service Discovery.
  * - Resolves virtual microservice target names (e.g., http://customer-service) to physical network IPs.

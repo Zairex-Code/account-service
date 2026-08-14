@@ -147,7 +147,7 @@ public class CreateAccountUseCaseImpl implements CreateAccountUseCase {
     }
 
     /**
-     * Generates a unique 14-digit bank account number using standard BCP prefix format.
+     * Generates a unique 14-digit bank account number using standard prefix format.
      *
      * @return Formatted 14-digit numeric string (e.g., "191-0048291042").
      */

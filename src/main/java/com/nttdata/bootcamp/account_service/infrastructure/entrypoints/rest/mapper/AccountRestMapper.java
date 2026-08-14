@@ -11,7 +11,7 @@ import org.mapstruct.Mapping;
  * MapStruct mapper interface for converting between REST HTTP DTOs
  * and pure domain {@link Account} entities.
  * <p>
- * Technical & Business Rules (NTT DATA / BCP Standards):
+ * Technical & Business Rules (NTT DATA / Banking Standards):
  * - Generates high-performance mapping code at compile-time to eliminate reflection.
  * - Decouples public HTTP API contracts from internal core domain representations.
  * - Explicitly ignores system-generated audit and business attributes during request mapping.
