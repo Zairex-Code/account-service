@@ -6,6 +6,7 @@ import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistenc
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -79,5 +80,24 @@ public class GetAccountUseCaseImpl implements GetAccountUseCase {
         log.debug("Streaming all accounts stored in financial core");
         return accountPersistencePort.findAll()
                 .doOnComplete(() -> log.debug("Completed streaming all accounts"));
+    }
+
+    /**
+     * Retrieves a consolidated report of accounts opened within a date range for a customer.
+     *
+     * @param customerId Unique internal database identifier of the customer.
+     * @param start      Inclusive start of the creation date range.
+     * @param end        Inclusive end of the creation date range.
+     * @return A Flowable streaming matching Account entities.
+     */
+    @Override
+    public Flowable<Account> findByCustomerIdAndDateRange(String customerId,
+                                                          LocalDateTime start,
+                                                          LocalDateTime end) {
+        log.debug("Streaming accounts for customer ID '{}' between {} and {}",
+                customerId, start, end);
+        return accountPersistencePort.findByCustomerIdAndDateRange(customerId, start, end)
+                .doOnComplete(() -> log.debug(
+                        "Completed streaming account report for customer ID: {}", customerId));
     }
 }
