@@ -4,6 +4,7 @@ import com.nttdata.bootcamp.account_service.domain.model.Account;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import java.time.LocalDateTime;
 
 
 /**
@@ -48,4 +49,16 @@ public interface GetAccountUseCase {
      * @return A Flowable streaming all Account entities available in persistence core
      */
     Flowable<Account> findAll();
+
+    /**
+     * Retrieves a consolidated report of accounts opened within a date range for a customer.
+     *
+     * @param customerId Unique internal database identifier of the customer.
+     * @param start      Inclusive start of the creation date range.
+     * @param end        Inclusive end of the creation date range.
+     * @return A Flowable streaming matching Account entities.
+     */
+    Flowable<Account> findByCustomerIdAndDateRange(String customerId,
+                                                   LocalDateTime start,
+                                                   LocalDateTime end);
 }
