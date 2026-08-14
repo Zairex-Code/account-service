@@ -77,6 +77,12 @@
 			<artifactId>spring-cloud-starter-config</artifactId>
 		</dependency>
 
+		<!-- Spring for Apache Kafka (event-driven messaging) -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
 		<!-- Springdoc OpenAPI UI for Reactive WebFlux -->
 		<dependency>
 			<groupId>org.springdoc</groupId>
