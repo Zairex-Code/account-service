@@ -4,6 +4,7 @@ import com.nttdata.bootcamp.account_service.domain.model.AccountType;
 import com.nttdata.bootcamp.account_service.infrastructure.persistence.document.AccountDocument;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
+import java.time.LocalDateTime;
 import org.springframework.data.repository.reactive.RxJava3CrudRepository;
 import org.springframework.stereotype.Repository;
 
@@ -43,4 +44,16 @@ public interface RxAccountRepository extends RxJava3CrudRepository<AccountDocume
      * @return A {@link Flowable} streaming all matching {@link AccountDocument} entities.
      */
     Flowable<AccountDocument> findByCustomerIdAndType(String customerId, AccountType type);
+
+    /**
+     * Streams all account documents registered under a specific customer opened within a date range.
+     *
+     * @param customerId Unique customer primary database identifier.
+     * @param start      Inclusive start of the creation date range.
+     * @param end        Inclusive end of the creation date range.
+     * @return A {@link Flowable} streaming all matching {@link AccountDocument} entities.
+     */
+    Flowable<AccountDocument> findByCustomerIdAndCreatedAtBetween(String customerId,
+                                                                  LocalDateTime start,
+                                                                  LocalDateTime end);
 }
