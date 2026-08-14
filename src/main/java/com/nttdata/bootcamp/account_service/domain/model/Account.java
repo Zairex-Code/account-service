@@ -37,6 +37,7 @@ public class Account {
     private final Integer maxMonthlyTransactions;
     private final Integer currentMonthlyTransactions;
     private final Integer allowedTransactionDay;
+    private final Double transactionCommission;
     private final List<String> holders;
     private final List<String> signatories;
     private final LocalDateTime createdAt;
@@ -67,6 +68,10 @@ public class Account {
 
     /**
      * Debits a positive monetary amount from the account balance
+     * <p>
+     * Business Rule: when the fee-free monthly transaction limit is exceeded, a
+     * transaction commission is automatically charged together with the withdrawal.
+     * </p>
      *
      * @param amount Positive amount to withdraw
      * @return A new immutable Account instance with updated balance and transaction count
@@ -78,14 +83,39 @@ public class Account {
         if (this.status != AccountStatus.ACTIVE){
             throw new IllegalStateException("Cannot process withdrawal on account in status: " + this.status);
         }
-        if (this.balance < amount){
-            throw new InsufficientBalanceException(this.accountNumber, this.balance, amount);
+
+        double commission = transactionCommission();
+        double totalDebit = amount + commission;
+
+        if (this.balance < totalDebit){
+            throw new InsufficientBalanceException(this.accountNumber, this.balance, totalDebit);
         }
         return this.toBuilder()
-                .balance(this.balance-amount)
+                .balance(this.balance - totalDebit)
                 .currentMonthlyTransactions(this.currentMonthlyTransactions + 1)
                 .updatedAt(LocalDateTime.now())
                 .build();
+    }
+
+
+    /**
+     * Calculates the automatic transaction commission charged when the fee-free
+     * monthly transaction limit has been reached.
+     *
+     * @return The commission amount to charge, or 0.0 when no commission applies.
+     */
+    private double transactionCommission(){
+        if (this.transactionCommission == null || this.transactionCommission <= 0){
+            return 0.0;
+        }
+        if (this.maxMonthlyTransactions == null){
+            return 0.0;
+        }
+        int current = this.currentMonthlyTransactions == null ? 0 : this.currentMonthlyTransactions;
+        if (current >= this.maxMonthlyTransactions){
+            return this.transactionCommission;
+        }
+        return 0.0;
     }
 
 
