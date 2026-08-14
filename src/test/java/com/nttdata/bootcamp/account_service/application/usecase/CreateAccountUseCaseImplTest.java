@@ -65,7 +65,7 @@ class CreateAccountUseCaseImplTest {
                 .build();
 
         when(customerClientPort.getById(customerId)).thenReturn(Maybe.just(
-                new CustomerInfo(customerId, CustomerType.PERSONAL, CustomerProfile.STANDARD)));
+                new CustomerInfo(customerId, CustomerType.PERSONAL, CustomerProfile.STANDARD, false)));
         when(accountPersistencePort.findByCustomerIdAndType(customerId, AccountType.SAVINGS))
                 .thenReturn(Flowable.empty());
         when(accountPersistencePort.save(any(Account.class))).thenReturn(Single.just(savedAccount));
@@ -119,7 +119,7 @@ class CreateAccountUseCaseImplTest {
                 .build();
 
         when(customerClientPort.getById(customerId)).thenReturn(Maybe.just(
-                new CustomerInfo(customerId, CustomerType.PERSONAL, CustomerProfile.STANDARD)));
+                new CustomerInfo(customerId, CustomerType.PERSONAL, CustomerProfile.STANDARD, false)));
         when(accountPersistencePort.findByCustomerIdAndType(customerId, AccountType.SAVINGS))
                 .thenReturn(Flowable.just(Account.builder().id("ACC-001").build()));
 
@@ -145,7 +145,7 @@ class CreateAccountUseCaseImplTest {
                 .build();
 
         when(customerClientPort.getById(customerId)).thenReturn(Maybe.just(
-                new CustomerInfo(customerId, CustomerType.BUSINESS, CustomerProfile.STANDARD)));
+                new CustomerInfo(customerId, CustomerType.BUSINESS, CustomerProfile.STANDARD, false)));
 
         // When
         TestObserver<Account> testObserver = createAccountUseCase.execute(inputAccount).test();
@@ -190,5 +190,29 @@ class CreateAccountUseCaseImplTest {
 
         verify(customerClientPort, never()).getById(any());
         verify(accountPersistencePort, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should emit error when customer has overdue debit and is blocked")
+    void execute_WhenCustomerHasOverdueDebit_ShouldEmitIllegalStateException() {
+        // Given
+        String customerId = "CUST-OVERDUE";
+        Account inputAccount = Account.builder()
+                .customerId(customerId)
+                .type(AccountType.SAVINGS)
+                .balance(100.0)
+                .build();
+
+        when(customerClientPort.getById(customerId)).thenReturn(Maybe.just(
+                new CustomerInfo(customerId, CustomerType.PERSONAL, CustomerProfile.STANDARD, true)));
+
+        // When
+        TestObserver<Account> testObserver = createAccountUseCase.execute(inputAccount).test();
+
+        // Then
+        testObserver.assertError(throwable -> throwable instanceof IllegalStateException
+                && throwable.getMessage().contains("overdue debit"));
+
+        verify(accountPersistencePort, never()).save(any(Account.class));
     }
 }
