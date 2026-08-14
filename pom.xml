@@ -26,6 +26,10 @@
 		<checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
 		<jacoco.plugin.version>0.8.11</jacoco.plugin.version>
 		<rxjava.version>3.1.10</rxjava.version>
+		<sonar-maven-plugin.version>4.0.0.4129</sonar-maven-plugin.version>
+		<sonar.host.url>http://localhost:9000</sonar.host.url>
+		<sonar.projectKey>account-service</sonar.projectKey>
+		<sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
 	</properties>
 
 	<dependencies>
@@ -254,6 +258,13 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- SonarQube analysis (token via SONAR_TOKEN env var) -->
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>${sonar-maven-plugin.version}</version>
 			</plugin>
 		</plugins>
 	</build>
