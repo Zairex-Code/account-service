@@ -67,6 +67,10 @@ public class AccountDocument {
     private Integer allowedTransactionDay;
 
 
+    @Field("transaction_commission")
+    private Double transactionCommission;
+
+
     @Field("holders")
     private List<String> holders;
 
