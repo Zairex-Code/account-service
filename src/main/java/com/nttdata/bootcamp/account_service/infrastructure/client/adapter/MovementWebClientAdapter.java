@@ -2,12 +2,16 @@ package com.nttdata.bootcamp.account_service.infrastructure.client.adapter;
 
 import com.nttdata.bootcamp.account_service.domain.port.output.MovementClientPort;
 import io.reactivex.rxjava3.core.Completable;
+import java.time.Duration;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreaker;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.adapter.rxjava.RxJava3Adapter;
+import reactor.core.publisher.Mono;
 
 /**
  * Reactive WebClient adapter implementation for {@link MovementClientPort} interfacing
@@ -27,6 +31,8 @@ import reactor.adapter.rxjava.RxJava3Adapter;
 public class MovementWebClientAdapter implements MovementClientPort {
 
     private final WebClient.Builder webClientBuilder;
+
+    private final ReactiveCircuitBreakerFactory<?, ?> circuitBreakerFactory;
 
     /**
      * Records a monetary movement in the transaction-service ledger.
@@ -49,19 +55,24 @@ public class MovementWebClientAdapter implements MovementClientPort {
                 "movementType", movementType,
                 "amount", amount);
 
-        return RxJava3Adapter.monoToCompletable(
-                        webClientBuilder.build()
-                                .post()
-                                .uri("http://transaction-service/api/v1/movements")
-                                .bodyValue(body)
-                                .retrieve()
-                                .toBodilessEntity()
-                                .then())
-                .doOnComplete(() -> log.debug("Movement recorded for product ID: {}", productId))
-                .onErrorComplete(ex -> {
-                    log.warn("Movement recording failed for product ID: {}. Error: {}",
-                            productId, ex.getMessage());
-                    return true;
-                });
+        ReactiveCircuitBreaker circuitBreaker = circuitBreakerFactory.create("transaction-service");
+
+        Mono<Void> call = webClientBuilder.build()
+                .post()
+                .uri("http://transaction-service/api/v1/movements")
+                .bodyValue(body)
+                .retrieve()
+                .toBodilessEntity()
+                .then()
+                .timeout(Duration.ofSeconds(2));
+
+        Mono<Void> guarded = circuitBreaker.run(call, throwable -> {
+            log.warn("Movement recording failed for product ID: {}. Error: {}",
+                    productId, throwable.getMessage());
+            return Mono.empty();
+        });
+
+        return RxJava3Adapter.monoToCompletable(guarded)
+                .doOnComplete(() -> log.debug("Movement recorded for product ID: {}", productId));
     }
 }
