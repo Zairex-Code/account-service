@@ -118,4 +118,35 @@ class WithdrawAccountUseCaseImplTest {
 
         verify(accountPersistencePort, never()).findById(any());
     }
+
+    @Test
+    @DisplayName("Should charge commission when withdrawal exceeds the fee-free monthly limit")
+    void withdraw_WhenLimitExceeded_ShouldChargeCommission() {
+        String id = "ACC-003";
+        Account existingAccount = Account.builder()
+                .id(id)
+                .accountNumber("191-3333333333")
+                .customerId("CUST-001")
+                .type(AccountType.SAVINGS)
+                .balance(100.0)
+                .maxMonthlyTransactions(5)
+                .currentMonthlyTransactions(5)
+                .transactionCommission(2.0)
+                .status(AccountStatus.ACTIVE)
+                .build();
+
+        when(accountPersistencePort.findById(id)).thenReturn(Maybe.just(existingAccount));
+        when(accountPersistencePort.save(any(Account.class)))
+                .thenAnswer(invocation -> Single.just(invocation.getArgument(0)));
+        when(movementClientPort.recordMovement(any(String.class), any(String.class),
+                any(String.class), any(Double.class))).thenReturn(Completable.complete());
+
+        TestObserver<Account> testObserver = withdrawAccountUseCase.withdraw(id, 10.0).test();
+
+        testObserver.assertValue(account -> account.getBalance().equals(88.0)
+                && account.getCurrentMonthlyTransactions() == 6);
+        testObserver.assertComplete();
+
+        verify(accountPersistencePort).save(any(Account.class));
+    }
 }
