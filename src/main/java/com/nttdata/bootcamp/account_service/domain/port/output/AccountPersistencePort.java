@@ -6,6 +6,7 @@ import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Flowable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
+import java.time.LocalDateTime;
 
 /**
  * Secondary Output Port interface defining reactive database persistence operations
@@ -57,6 +58,16 @@ public interface AccountPersistencePort {
      * @return A Flowable streaming all matching Account entities.
      */
     Flowable<Account> findByCustomerIdAndType(String customerId, AccountType type);
+
+    /**
+     * Streams all accounts of a specific customer opened within an inclusive date range.
+     *
+     * @param customerId Unique customer database identifier.
+     * @param start      Inclusive start of the creation date range.
+     * @param end        Inclusive end of the creation date range.
+     * @return A Flowable streaming all matching Account entities.
+     */
+    Flowable<Account> findByCustomerIdAndDateRange(String customerId, LocalDateTime start, LocalDateTime end);
 
     /**
      * Streams all registered bank accounts stored in the core database
