@@ -63,6 +63,10 @@ Verificar: http://localhost:8082/webjars/swagger-ui/index.html
 ./mvnw verify   # tests + cobertura (≥80%)
 ```
 
+## Cobertura y SonarQube
+- Reporte HTML: `target/site/jacoco/index.html` (`mvn test`). Cobertura: 87.3%.
+- SonarQube: `./mvnw sonar:sonar` con `export SONAR_TOKEN=<token>` (config ya en el pom).
+
 ## Docker
 ```bash
 docker build -t account-service .
