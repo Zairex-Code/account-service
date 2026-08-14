@@ -13,6 +13,7 @@ import com.nttdata.bootcamp.account_service.domain.model.DebitCard;
 import com.nttdata.bootcamp.account_service.domain.model.DebitCardStatus;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DebitCardPersistencePort;
+import com.nttdata.bootcamp.account_service.domain.port.output.DomainEventPublisher;
 import com.nttdata.bootcamp.account_service.domain.port.output.MovementClientPort;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
@@ -39,6 +40,9 @@ class PayWithDebitCardUseCaseImplTest {
 
     @Mock
     private MovementClientPort movementClientPort;
+
+    @Mock
+    private DomainEventPublisher domainEventPublisher;
 
     @InjectMocks
     private PayWithDebitCardUseCaseImpl payWithDebitCardUseCase;
@@ -68,6 +72,7 @@ class PayWithDebitCardUseCaseImplTest {
                 .thenAnswer(invocation -> Single.just(invocation.getArgument(0)));
         when(movementClientPort.recordMovement(anyString(), anyString(), anyString(), anyDouble()))
                 .thenReturn(Completable.complete());
+        when(domainEventPublisher.publish(anyString(), any())).thenReturn(Completable.complete());
 
         TestObserver<Account> observer = payWithDebitCardUseCase.pay("CARD-001", 100.0).test();
 
