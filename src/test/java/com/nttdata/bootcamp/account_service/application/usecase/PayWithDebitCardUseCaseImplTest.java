@@ -1,7 +1,6 @@
 package com.nttdata.bootcamp.account_service.application.usecase;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -14,7 +13,6 @@ import com.nttdata.bootcamp.account_service.domain.model.DebitCardStatus;
 import com.nttdata.bootcamp.account_service.domain.port.output.AccountPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DebitCardPersistencePort;
 import com.nttdata.bootcamp.account_service.domain.port.output.DomainEventPublisher;
-import com.nttdata.bootcamp.account_service.domain.port.output.MovementClientPort;
 import io.reactivex.rxjava3.core.Completable;
 import io.reactivex.rxjava3.core.Maybe;
 import io.reactivex.rxjava3.core.Single;
@@ -37,9 +35,6 @@ class PayWithDebitCardUseCaseImplTest {
 
     @Mock
     private AccountPersistencePort accountPersistencePort;
-
-    @Mock
-    private MovementClientPort movementClientPort;
 
     @Mock
     private DomainEventPublisher domainEventPublisher;
@@ -70,8 +65,6 @@ class PayWithDebitCardUseCaseImplTest {
         when(accountPersistencePort.findById("ACC-001")).thenReturn(Maybe.just(account));
         when(accountPersistencePort.save(any(Account.class)))
                 .thenAnswer(invocation -> Single.just(invocation.getArgument(0)));
-        when(movementClientPort.recordMovement(anyString(), anyString(), anyString(), anyDouble()))
-                .thenReturn(Completable.complete());
         when(domainEventPublisher.publish(anyString(), any())).thenReturn(Completable.complete());
 
         TestObserver<Account> observer = payWithDebitCardUseCase.pay("CARD-001", 100.0).test();
